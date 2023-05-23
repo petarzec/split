@@ -1,0 +1,37 @@
+#!/bin/bash
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+split_image_vertically() {
+    image_path=$1
+    
+    # Load the image
+    image=$(basename "$image_path")
+    image_name="${image%.*}"
+    image_extension="${image##*.}"
+    
+    # Calculate the mid-point
+    width=$(magick identify -format "%w" "$image_path")
+    midpoint=$((width / 2))
+    
+    # Split the image into two halves
+    left_half_path="${script_dir}/left_${image_name}.${image_extension}"
+    right_half_path="${script_dir}/right_${image_name}.${image_extension}"
+    magick convert "$image_path" -crop "${midpoint}x+0+0" +repage "${left_half_path}"
+    magick convert "$image_path" -crop "${midpoint}x+${midpoint}+0" +repage "${right_half_path}"
+    
+    echo "Split images saved: ${left_half_path}, ${right_half_path}"
+}
+
+# Get the list of image files in the script's directory
+image_files=("${script_dir}"/*.png "${script_dir}"/*.jpg "${script_dir}"/*.jpeg)
+
+# Split each image in the script's directory
+for image_file in "${image_files[@]}"; do
+    split_image_vertically "$image_file"
+done
+
+echo "Image splitting completed."
+
+# Close the terminal window without any warning messages
+osascript -e 'tell application "Terminal" to quit'
